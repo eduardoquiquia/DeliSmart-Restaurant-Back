@@ -1,5 +1,6 @@
 """Aislamiento multi-tenant: base y esquema compartidos, filtrados siempre por restaurante."""
 
+from django.db.models import ProtectedError
 from rest_framework import serializers, viewsets
 
 from .permissions import RolPermitido
@@ -19,6 +20,14 @@ class TenantMixin:
 
     def perform_create(self, serializer):
         serializer.save(restaurante=restaurante_de(self.request))
+
+    def perform_destroy(self, instance):
+        try:
+            instance.delete()
+        except ProtectedError:
+            raise serializers.ValidationError(
+                {'detail': 'No se puede eliminar: tiene registros asociados (pedidos o platos).'}
+            )
 
 
 class TenantViewSet(TenantMixin, viewsets.ModelViewSet):

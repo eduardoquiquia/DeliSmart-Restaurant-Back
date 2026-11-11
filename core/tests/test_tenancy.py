@@ -88,3 +88,10 @@ class AislamientoTenantTests(TestCase):
         )
         self.assertEqual(pedido.numero, 1)
         self.assertEqual(self.pedido_rival.numero, 1)
+
+    def test_no_borra_categoria_con_platos_ni_cliente_con_pedidos(self):
+        categoria = self.carta_sabrosito['pollos']
+        self.assertEqual(self.api.delete(f'/api/v1/categorias/{categoria.id}/').status_code, 400)
+        cliente = crear_cliente(self.sabrosito, telefono='51922222222')
+        crear_pedido(restaurante=self.sabrosito, cliente=cliente, items=[{'plato': self.carta_sabrosito['entero'], 'cantidad': 1}])
+        self.assertEqual(self.api.delete(f'/api/v1/clientes/{cliente.id}/').status_code, 400)
