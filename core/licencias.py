@@ -4,11 +4,10 @@ Antes de abrir el panel o procesar un mensaje de WhatsApp se comprueba que la li
 restaurante esté ACTIVA y no haya vencido. El backend admin es la fuente de verdad; la
 respuesta se guarda en el restaurante y se reutiliza durante LICENSE_CACHE_SECONDS.
 
-TODO(credenciales): delismart-admin-saas-back todavía no expone el endpoint interno.
-Debe responder `GET {ADMIN_SAAS_API_URL}/api/internal/licencias/<subdominio>/` con el header
-`Authorization: Bearer <INTERNAL_API_TOKEN>` y un JSON como:
+El backend admin responde `GET {ADMIN_SAAS_API_URL}/api/internal/licencias/<subdominio>/` con el
+header `Authorization: Bearer <INTERNAL_API_TOKEN>` y un JSON como:
     {"estado": "activa", "plan": "pro", "fecha_vencimiento": "2026-12-31"}
-Mientras no exista, deja ADMIN_SAAS_API_URL vacío y la licencia local manda.
+Sin ADMIN_SAAS_API_URL manda la licencia local (la que trae el acceso desde Mi Plan o el seed).
 """
 
 import logging

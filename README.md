@@ -41,6 +41,25 @@ Antes de responder cualquier endpoint del panel (`core.permissions.LicenciaVigen
 - Si el admin no responde, `LICENSE_FALLBACK=local` usa la última licencia guardada; `deny` bloquea.
 - Sin `ADMIN_SAAS_API_URL` manda la licencia local del restaurante (la que pone `seed_demo` o el admin de Django).
 
+## Acceso desde Mi Plan (SSO)
+
+El dueño entra a su pollería desde "Mi Plan" del panel admin sin escribir contraseña:
+
+1. `delismart-admin-saas-back` firma con `INTERNAL_API_TOKEN` un enlace de un solo uso a `{RESTAURANT_FRONT_URL}/sso#token=…` con el restaurante, el dueño y su licencia.
+2. El panel de la pollería manda el token a `POST /api/v1/auth/sso/`.
+3. Aquí se verifica la firma, que no tenga más de `SSO_MAX_AGE_SECONDS` (120) y que no se haya usado. Se crea la pollería si no existe, se guarda la licencia y se vincula por correo (o se crea) su usuario `admin`, sin contraseña utilizable: puede fijarla desde Usuarios.
+
+Así, todo cliente que paga en el landing tiene usuario en la pollería desde su primer clic. `INTERNAL_API_TOKEN` debe ser idéntico en ambos backends.
+
+## Producción
+
+| Proyecto | URL |
+| --- | --- |
+| Panel de la pollería | https://deli-smart-restaurant-front.vercel.app |
+| Backend admin | https://delismart-admin-saas-back.onrender.com |
+
+En Render: `CORS_ALLOWED_ORIGINS` con la URL del panel, `ADMIN_SAAS_API_URL` con el backend admin, el mismo `INTERNAL_API_TOKEN` del admin y `DJANGO_SECRET_KEY`. `ALLOWED_HOSTS` y `PUBLIC_BASE_URL` toman solos el dominio de Render (`RENDER_EXTERNAL_HOSTNAME` y `RENDER_EXTERNAL_URL`).
+
 ## Flujo de pedidos por WhatsApp
 
 ```
@@ -70,16 +89,15 @@ Cada cambio de estado de un pedido de WhatsApp avisa al cliente en el mismo chat
 - [ ] Guardar en cada restaurante su `whatsapp_phone_number_id`: así el webhook sabe a qué pollería va cada mensaje.
 - [ ] `OPENAI_API_KEY` con saldo.
 - [ ] `GOOGLE_MAPS_API_KEY` con la Routes API habilitada.
-- [ ] `delismart-admin-saas-back` todavía no expone `GET /api/internal/licencias/<subdominio>/` (con `Authorization: Bearer <INTERNAL_API_TOKEN>`, responde `estado`, `plan` y `fecha_vencimiento`). Hasta entonces deja `ADMIN_SAAS_API_URL` vacío.
 - [ ] Producción: procesar el webhook en una cola (Celery/RQ) para responder a Meta en menos de 5 s, y guardar los medios en un almacenamiento externo.
 
 ## API
 
-Todo cuelga de `/api/v1/` y exige un JWT del personal con licencia vigente, salvo `health/` y `auth/login/`.
+Todo cuelga de `/api/v1/` y exige un JWT del personal con licencia vigente, salvo `health/`, `auth/login/` y `auth/sso/`.
 
 | Ruta | Uso |
 | --- | --- |
-| `auth/login/`, `auth/refresh/`, `auth/me/` | Sesión, rol y estado de la licencia |
+| `auth/login/`, `auth/sso/`, `auth/refresh/`, `auth/me/` | Sesión (con contraseña o enlace de Mi Plan), rol y estado de la licencia |
 | `restaurante/` | Configuración: ubicación, cobertura, tiempos, pagos, WhatsApp |
 | `categorias/`, `platos/` | Carta |
 | `clientes/` | Clientes con total de pedidos y gasto |
