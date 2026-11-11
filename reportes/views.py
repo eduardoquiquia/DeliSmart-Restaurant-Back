@@ -64,9 +64,11 @@ class ResumenView(APIView):
         top = (
             ItemPedido.objects.filter(pedido__in=validos)
             .values('nombre')
-            .annotate(cantidad=Sum('cantidad'), ingresos=Sum(F('cantidad') * F('precio_unitario')))
-            .order_by('-cantidad', 'nombre')[:8]
+            # Los alias no pueden llamarse como los campos: F('cantidad') apuntaría a la suma.
+            .annotate(unidades=Sum('cantidad'), ingresos=Sum(F('cantidad') * F('precio_unitario')))
+            .order_by('-unidades', 'nombre')[:8]
         )
+        top = [{'nombre': fila['nombre'], 'cantidad': fila['unidades'], 'ingresos': fila['ingresos']} for fila in top]
 
         hoy = timezone.localdate()
         hoy_qs = Pedido.objects.filter(restaurante=restaurante, creado_en__date=hoy)
@@ -80,7 +82,7 @@ class ResumenView(APIView):
             'por_estado': {estado: por_estado.get(estado, 0) for estado in Pedido.Estado.values},
             'por_origen': {origen: por_origen.get(origen, 0) for origen in Pedido.Origen.values},
             'serie_diaria': serie,
-            'productos_top': list(top),
+            'productos_top': top,
             'hoy': {
                 'pedidos': hoy_qs.exclude(estado=Pedido.Estado.CANCELADO).count(),
                 'ventas': hoy_qs.exclude(estado=Pedido.Estado.CANCELADO).aggregate(v=Sum('total'))['v'] or Decimal('0'),
