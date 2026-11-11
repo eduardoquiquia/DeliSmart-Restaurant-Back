@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from carta.views import CategoriaViewSet, PlatoViewSet
 from clientes.views import ClienteViewSet
-from core.views import HealthView, LoginView, PerfilView, RestauranteView, UsuarioViewSet
+from core.views import HealthView, LoginView, PerfilView, SSOView, RestauranteView, UsuarioViewSet
 from inventario.views import InsumoViewSet
 from pedidos.views import PedidoViewSet
 from reportes.views import ResumenView
@@ -22,6 +22,7 @@ router.register('conversaciones', ConversacionViewSet, basename='conversacion')
 urlpatterns = [
     path('health/', HealthView.as_view()),
     path('auth/login/', LoginView.as_view()),
+    path('auth/sso/', SSOView.as_view()),
     path('auth/refresh/', TokenRefreshView.as_view()),
     path('auth/me/', PerfilView.as_view()),
     path('restaurante/', RestauranteView.as_view()),

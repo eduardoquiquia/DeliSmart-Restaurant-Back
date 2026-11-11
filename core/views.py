@@ -11,6 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .licencias import verificar_licencia
 from .models import Usuario as UsuarioModel
 from .permissions import SoloAdmin
+from .sso import TokenSSOInvalido, canjear_token
 from .serializers import PerfilSerializer, RestauranteSerializer, UsuarioSerializer
 from .tenancy import TenantViewSet, restaurante_de
 
@@ -51,10 +52,36 @@ class LoginView(APIView):
             return Response({'detail': 'Usuario o contraseña incorrectos.'}, status=status.HTTP_401_UNAUTHORIZED)
         if user.restaurante is None:
             return Response({'detail': 'Tu usuario no pertenece a ninguna pollería.'}, status=status.HTTP_403_FORBIDDEN)
-        refresh = RefreshToken.for_user(user)
-        refresh['rol'] = user.rol
-        refresh['restaurante'] = user.restaurante.subdominio
-        return Response({'access': str(refresh.access_token), 'refresh': str(refresh)})
+        return Response(tokens_para(user))
+
+
+def tokens_para(user):
+    refresh = RefreshToken.for_user(user)
+    refresh['rol'] = user.rol
+    refresh['restaurante'] = user.restaurante.subdominio
+    return {'access': str(refresh.access_token), 'refresh': str(refresh)}
+
+
+class SSOSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+
+class SSOView(APIView):
+    """Canjea el enlace de un solo uso que genera "Mi Plan" en el panel admin por una sesión."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
+
+    def post(self, request):
+        data = SSOSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        try:
+            user = canjear_token(data.validated_data['token'])
+        except TokenSSOInvalido as error:
+            return Response({'detail': str(error)}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(tokens_para(user))
 
 
 class PerfilView(APIView):

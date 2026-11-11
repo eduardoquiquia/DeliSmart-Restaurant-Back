@@ -99,3 +99,14 @@ class TenantModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class TokenSSOUsado(models.Model):
+    """Accesos directos ya canjeados: cada enlace desde Mi Plan sirve una sola vez."""
+
+    jti = models.CharField(max_length=64, unique=True)
+    usado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'token SSO usado'
+        verbose_name_plural = 'tokens SSO usados'
