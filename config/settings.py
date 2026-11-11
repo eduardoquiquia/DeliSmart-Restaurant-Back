@@ -31,6 +31,9 @@ if not SECRET_KEY:
     SECRET_KEY = 'django-insecure-restaurante-solo-desarrollo-9v#2m!q7x@k4p8w&z1r6t3y5u0'
 
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
+# Render publica el dominio del servicio en esta variable.
+if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
 
 
 INSTALLED_APPS = [
@@ -111,14 +114,18 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL', 'http://localhost:8001').rstrip('/')
+PUBLIC_BASE_URL = os.environ.get(
+    'PUBLIC_BASE_URL', os.environ.get('RENDER_EXTERNAL_URL', 'http://localhost:8001')
+).rstrip('/')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # CORS
 
-CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', 'http://localhost:5174,https://app.delismart.com')
+CORS_ALLOWED_ORIGINS = env_list(
+    'CORS_ALLOWED_ORIGINS', 'http://localhost:5174,https://deli-smart-restaurant-front.vercel.app'
+)
 
 
 # Django REST Framework
@@ -147,6 +154,8 @@ ADMIN_SAAS_API_URL = os.environ.get('ADMIN_SAAS_API_URL', '').rstrip('/')
 INTERNAL_API_TOKEN = os.environ.get('INTERNAL_API_TOKEN', '')
 LICENSE_FALLBACK = os.environ.get('LICENSE_FALLBACK', 'local').lower()
 LICENSE_CACHE_SECONDS = int(os.environ.get('LICENSE_CACHE_SECONDS', '300'))
+# INTERNAL_API_TOKEN también firma el acceso directo desde Mi Plan, que dura estos segundos.
+SSO_MAX_AGE_SECONDS = int(os.environ.get('SSO_MAX_AGE_SECONDS', '120'))
 
 
 # Integraciones externas
